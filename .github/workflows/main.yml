@@ -15,6 +15,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # --- ДОБАВЛЕННЫЙ ШАГ ---
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin' # Используем популярный и стабильный дистрибутив
+          java-version: '21'      # Указываем версию, которую требует Capacitor 7
+      # -----------------------
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
