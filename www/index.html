@@ -238,7 +238,6 @@
   #ingameMenu.hidden { display: none; }
   #ingameMenu .menu-panel { background: linear-gradient(180deg, #131e2a 0%, #0e1620 100%); backdrop-filter: none; -webkit-backdrop-filter: none; }
 
-  /* ===== ЭНЦИКЛОПЕДИЯ ===== */
   .codex-screen {
     z-index: 150;
     background: rgba(4, 10, 16, 0.96);
@@ -450,7 +449,6 @@
   </div>
 </div>
 
-<!-- Энциклопедия: выбор -->
 <div id="screenCodex" class="screen codex-screen hidden">
   <div class="menu-panel">
     <h2>Энциклопедия</h2>
@@ -462,7 +460,6 @@
   </div>
 </div>
 
-<!-- Энциклопедия врагов -->
 <div id="screenEnemiesCodex" class="screen codex-screen hidden">
   <div class="codex-fullpanel">
     <div class="codex-header">
@@ -474,7 +471,6 @@
   </div>
 </div>
 
-<!-- Энциклопедия дайсов -->
 <div id="screenDiceCodex" class="screen codex-screen hidden">
   <div class="codex-fullpanel">
     <div class="codex-header">
@@ -746,7 +742,6 @@ function unlockDice(type) {
   if (!codex.dice[type]) { codex.dice[type] = true; saveCodex(); }
 }
 
-/* Временная подмена ctx для рендера иконок в offscreen canvas */
 function renderIcon(w, h, drawFn) {
   const tmp = document.createElement('canvas');
   tmp.width = w; tmp.height = h;
@@ -820,11 +815,8 @@ function renderEnemiesCodex() {
 
     const iconWrap = document.createElement('div');
     iconWrap.className = 'codex-card-icon' + (unlocked ? '' : ' locked');
-    if (unlocked) {
-      iconWrap.appendChild(renderEnemyIcon(type));
-    } else {
-      iconWrap.appendChild(makeLockedIcon(90));
-    }
+    if (unlocked) iconWrap.appendChild(renderEnemyIcon(type));
+    else iconWrap.appendChild(makeLockedIcon(90));
 
     const titleBox = document.createElement('div');
     const title = document.createElement('div');
@@ -881,11 +873,8 @@ function renderDiceCodex() {
 
     const iconWrap = document.createElement('div');
     iconWrap.className = 'codex-card-icon' + (unlocked ? '' : ' locked');
-    if (unlocked) {
-      iconWrap.appendChild(renderDieIcon(type, 1, false, 90));
-    } else {
-      iconWrap.appendChild(makeLockedIcon(90));
-    }
+    if (unlocked) iconWrap.appendChild(renderDieIcon(type, 1, false, 90));
+    else iconWrap.appendChild(makeLockedIcon(90));
 
     const titleBox = document.createElement('div');
     const title = document.createElement('div');
@@ -1077,7 +1066,8 @@ const sfx = {
     setTimeout(() => sfxTone({ freq: 784, duration: 0.22, type: 'triangle', gain: 0.10 }), 200);
   },
   rollD20() { for (let i = 0; i < 8; i++) setTimeout(() => sfxTone({ freq: 700 + Math.random() * 500, duration: 0.04, type: 'square', gain: 0.05 }), i * 90 + Math.random() * 80); },
-  sadD20() { sfxTone({ freq: 440, freqEnd: 220, duration: 0.7, type: 'triangle', gain: 0.10 }); setTimeout(() => sfxTone({ freq: 330, freqEnd: 110, duration: 0.9, type: 'sawtooth', gain: 0.10 }), 550); }
+  sadD20() { sfxTone({ freq: 440, freqEnd: 220, duration: 0.7, type: 'triangle', gain: 0.10 }); setTimeout(() => sfxTone({ freq: 330, freqEnd: 110, duration: 0.9, type: 'sawtooth', gain: 0.10 }), 550); },
+  shutdown() { sfxTone({ freq: 400, freqEnd: 80, duration: 0.5, type: 'sine', gain: 0.10 }); }
 };
 
 function playMusicOsc(freq, dur, type, gain, when) {
@@ -1137,6 +1127,48 @@ function enterGame(isFresh) {
 }
 function exitToMainMenu() { showMainMenu(); }
 
+/* === ФИНАЛЬНЫЙ ЭКРАН «ПРИЛОЖЕНИЕ ЗАКРЫТО» === */
+function showClosedScreen() {
+  if (document.getElementById('closedOverlay')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'closedOverlay';
+  overlay.style.cssText = [
+    'position: fixed', 'inset: 0', 'z-index: 99999',
+    'background: #000',
+    'display: flex', 'flex-direction: column',
+    'align-items: center', 'justify-content: center',
+    'gap: 16px', 'padding: 24px', 'text-align: center',
+    'color: #e8eef5',
+    "font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+    'animation: screenFade 0.4s ease-out'
+  ].join(';');
+  overlay.innerHTML = `
+    <div style="font-size: 28px; font-weight: 700; color: #ffd479;
+                letter-spacing: 0.1em; text-transform: uppercase;
+                text-shadow: 0 0 24px rgba(255,212,121,0.5), 0 0 48px rgba(255,212,121,0.25);">
+      Приложение закрыто
+    </div>
+    <div style="font-size: 14px; color: #7a95b0; max-width: 340px; line-height: 1.65;">
+      Браузер не позволил закрыть вкладку автоматически.<br>
+      Можете закрыть её вручную — игра завершена.
+    </div>
+    <div style="font-size: 11px; color: #4a5f78; letter-spacing: 0.08em; margin-top: 12px;">
+      Спасибо за игру · FanDreamers Forge
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  // На всякий случай отключаем звук
+  try { if (audio && audio.ctx) audio.ctx.suspend(); } catch(e){}
+}
+
+/* Пытаемся закрыть окно всеми способами */
+function attemptCloseWindow() {
+  try { window.open('', '_self', ''); window.close(); } catch(e){}
+  try { window.top.close(); } catch(e){}
+  try { self.close(); } catch(e){}
+  try { window.close(); } catch(e){}
+}
+
 $('btnEndless').addEventListener('click', () => { sfx.click(); showEndlessMenu(); });
 $('btnSettingsMain').addEventListener('click', () => { sfx.click(); showSettings('main'); });
 $('btnCodexMain').addEventListener('click', () => { sfx.click(); openCodex('main'); });
@@ -1170,11 +1202,20 @@ $('btnDiceBack').addEventListener('click', () => {
   $('screenCodex').classList.remove('hidden');
 });
 
+/* === КНОПКА ВЫХОДА — закрывает приложение === */
 $('btnExit').addEventListener('click', () => {
   sfx.click();
-  try { window.close(); } catch(e){}
-  setTimeout(() => { if (!document.hidden) { hideAllMenuScreens(); $('landscapeBg').classList.remove('hidden'); $('screenGoodbye').classList.remove('hidden'); } }, 80);
+  sfx.shutdown();
+  attemptCloseWindow();
+  // Если браузер не закрыл окно — показываем «Приложение закрыто»
+  setTimeout(() => {
+    if (!document.hidden && window.innerWidth > 0) {
+      attemptCloseWindow();
+      showClosedScreen();
+    }
+  }, 250);
 });
+
 $('btnContinue').addEventListener('click', () => { sfx.click(); enterGame(false); });
 $('btnNewGame').addEventListener('click', () => { sfx.click(); enterGame(true); });
 $('btnBackToMain').addEventListener('click', () => { sfx.click(); showMainMenu(); });
